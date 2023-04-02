@@ -22,10 +22,10 @@ void oops_again(widget_id w) {
 }
 ```
 
-> https://en.cppreference.com/w/cpp/thread/thread/thread
+> <https://en.cppreference.com/w/cpp/thread/thread/thread>
 
 - 默认构造的 `std::thread` 啥也不干，本身的构造和析构也可能被优化掉
--  构造时传递了`Callable` 参数的 `std::thread` 对象会在另一个线程执行 `Callable` 参数
+- 构造时传递了`Callable` 参数的 `std::thread` 对象会在另一个线程执行 `Callable` 参数
 - 构造时传递的参数会拷贝到另一个线程中执行
   - 需要考虑性能和生命周期问题
 - `std::thread` 是 move only 类型
@@ -39,11 +39,11 @@ void oops_again(widget_id w) {
 - `get_id()` 成员函数可以返回一个 `std::thread::id` 对象作为线程的标识
 - c++ 20 提供了 `std::jthread` 作为自动 `join` 的线程类型，更推荐使用，在 c++20 之前可以用 `RAII` 包装类达到类似的效果
 
-> https://en.cppreference.com/w/cpp/thread/jthread
+> <https://en.cppreference.com/w/cpp/thread/jthread>
 
 ## Sharing data between threads
 
-> https://en.cppreference.com/w/cpp/thread
+> <https://en.cppreference.com/w/cpp/thread>
 
 - 线程间数据共享要避免数据竞争(未定义行为)
 - 可以使用互斥量和锁来保护数据
@@ -68,7 +68,35 @@ void oops_again(widget_id w) {
 
 ## The C++ memory model and operations on atomic types
 
-> TBD
+> <https://en.cppreference.com/w/cpp/thread>
+> <https://en.cppreference.com/w/cpp/atomic/memory_order>
+
+- 每个变量都是一个对象, 包括(成员变量, 数组元素)
+- 每个对象至少占用一个内存位置
+- 基本类型刚好占用一个内存位置
+- 相邻的位域(bit field)可能占用相同的的内存位置
+- 多个线程访问同一个内存位置时, 如果只要有一个线程在改变这个位置, 是未定义行为
+- 对于非原子变量, 不同线程对于该变量的修改顺序认知可以不一致
+- 对于原子变量, 不同线程对于该变量的修改顺序认知保持一致, 但是对于不同的变量的相对顺序不保证
+- 书上对内存序的解释比较难懂, 建议参考 [C++ atomics, from basic to advanced. What do they really do? - Fedor Pikus CppCon 2017](https://www.youtube.com/watch?v=ZQFzMfHIxng&t=2953s)
+- 内存序选择
+  - `std::memory_order_seq_cst` 最严格, 性能最差
+  - `std::memory_order_acquire`, `std::memory_order_release`, `std::memory_order_acq_rel` 成对使用, 可以传给原子变量或者 `std::atomic_thread_fence` 的对应操作, 用于跨线程同步内存改动
+  - `std::memory_order_relaxed` 适合原子变量单独使用而不是作为其他内存改动的标记
+- `std::atomic` 模板出来标准库提供的实现以外, 也可以传入用户自定义的结构体, 但是结构体必须满足 `TriviallyCopyable` `CopyConstructible` 和 `CopyAssignable`
+- 对原子变量的常见操作
+  - 读
+    - `load`
+  - 写
+    - `store`
+  - 读-改-写
+    - `exchange`
+    - `compare_and_exchange_weak/strong`
+      - `compare_and_exchange_weak` 可能会假失败
+    - `fetch_xxx` (对整数或者指针)
+- 跨线程更新指针对象
+  - `std::atomic_xxx< std::shared_ptr >` before C++20
+  - `std::atomic< std::shared_ptr >` since C++20
 
 ## Designing lock-based concurrent data structures
 
@@ -95,7 +123,7 @@ void oops_again(widget_id w) {
   - stack
   - queue
 
-  ## Designing concurrent code
+## Designing concurrent code
 
 - 划分线程工作的方法
   - 提前根据数据块划分 (accumulate)
@@ -121,7 +149,8 @@ void oops_again(widget_id w) {
   - std::find
   - std::partial_sum
 - algorithm 库一些算法可以使用 execution policy (c++17)
-> https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag
+
+> <https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag>
 
 ## Advanced thread management
 
@@ -133,17 +162,17 @@ void oops_again(widget_id w) {
     - std::stop_token (c++20)
     - 自己实现中断检查函数 (before c++20)
 
-  ## Testing and debugging multithreaded applications
+## Testing and debugging multithreaded applications
 
-  - 并发 bug
-    - 阻塞
-      - 死锁
-      - 活锁
-      - IO 或线程间长时间等待
-  - 竞态条件
-    - 数据竞争
-    - 破坏不变量
-    - 生命周期问题
+- 并发 bug
+  - 阻塞
+    - 死锁
+    - 活锁
+    - IO 或线程间长时间等待
+- 竞态条件
+  - 数据竞争
+  - 破坏不变量
+  - 生命周期问题
 - 定位并发 bug
   - code review
   - 增加测试
@@ -151,8 +180,6 @@ void oops_again(widget_id w) {
     - 区分线程内工作和线程间工作
   - 多线程测试代码需要同步触发
     - `std::latch` (c++20)
-    -  `std::futrue` 或者 your latch
+    - `std::future` 或者 your latch
   - benchmark
     - 如果你是为了性能选择了并发，证明你的选择
-
-
